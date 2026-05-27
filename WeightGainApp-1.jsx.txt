@@ -1,0 +1,702 @@
+import { useState, useEffect, useCallback } from "react";
+
+// ─── TRANSLATIONS ──────────────────────────────────────────────────────────────
+const T = {
+  en: {
+    appTitle: "Weight Gain Diet Plan",
+    appSubtitle: "Target: Healthy Weight Gain",
+    today: "Today",
+    weekly: "Weekly",
+    monthly: "Monthly",
+    aiCoach: "AI Coach",
+    settings: "Settings",
+    progress: "Progress",
+    completed: "Completed",
+    pending: "Pending",
+    todayProgress: "Today's Progress",
+    weeklyReport: "Weekly Report",
+    monthlyReport: "Monthly Report",
+    shareProgress: "Share Progress",
+    switchLang: "हिंदी",
+    dailyHabits: "Daily Habits & Guidelines",
+    foodsToAvoid: "Foods to Avoid",
+    hydration: "Hydration: 10 glasses of water throughout the day.",
+    consistency: "Stay consistent, be patient and trust the process.",
+    avoid1: "Namkeen (salty snacks) & biscuits.",
+    avoid2: "Items made from refined flour (Maida).",
+    avoid3: "Outside fried or junk food.",
+    avoid4: "Cold drinks and packaged juices.",
+    askAI: "Ask AI Coach...",
+    aiSend: "Send",
+    aiTyping: "AI Coach is thinking...",
+    completedTasks: "Tasks Completed",
+    streakDays: "Day Streak",
+    avgCompletion: "Avg Completion",
+    shareTitle: "My Weight Gain Progress",
+    copyLink: "Copy Report",
+    copied: "Copied!",
+    resetDay: "Reset Today",
+    greeting: "Good",
+    morning: "Morning",
+    afternoon: "Afternoon",
+    evening: "Evening",
+    night: "Night",
+    rightNutrition: "RIGHT NUTRITION",
+    consistency2: "CONSISTENCY",
+    betterResults: "BETTER RESULTS",
+    aiFeature1: "AI Meal Planner",
+    aiFeature2: "Progress Analyzer",
+    aiFeature3: "Motivation Coach",
+    generateMeal: "Generate Custom Meal",
+    analyzeProgress: "Analyze My Progress",
+    getMotivation: "Get Motivation",
+    noDataYet: "Complete tasks to see your progress!",
+    weekdays: ["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"],
+    months: ["Jan","Feb","Mar","Apr","May","Jun","Jul","Aug","Sep","Oct","Nov","Dec"],
+  },
+  hi: {
+    appTitle: "वजन बढ़ाने का डाइट प्लान",
+    appSubtitle: "लक्ष्य: हेल्दी वजन बढ़ाना",
+    today: "आज",
+    weekly: "साप्ताहिक",
+    monthly: "मासिक",
+    aiCoach: "AI कोच",
+    settings: "सेटिंग्स",
+    progress: "प्रगति",
+    completed: "पूर्ण",
+    pending: "बाकी",
+    todayProgress: "आज की प्रगति",
+    weeklyReport: "साप्ताहिक रिपोर्ट",
+    monthlyReport: "मासिक रिपोर्ट",
+    shareProgress: "प्रगति शेयर करें",
+    switchLang: "English",
+    dailyHabits: "दैनिक आदतें और सुझाव",
+    foodsToAvoid: "इन चीज़ों से बचें",
+    hydration: "पानी: दिनभर में 10 गिलास पानी पिएं।",
+    consistency: "नियमित रहें, धैर्य रखें और प्रक्रिया पर भरोसा करें।",
+    avoid1: "नमकीन (चिप्स, नमकीन) और बिस्कुट।",
+    avoid2: "मैदे (रिफाईड फ्लोर) से बनी चीजें।",
+    avoid3: "बाहर का तला-भुना या जंक फूड।",
+    avoid4: "कोल्ड ड्रिंक्स और पैक्ड जूस।",
+    askAI: "AI कोच से पूछें...",
+    aiSend: "भेजें",
+    aiTyping: "AI कोच सोच रहे हैं...",
+    completedTasks: "पूर्ण कार्य",
+    streakDays: "दिन की स्ट्रीक",
+    avgCompletion: "औसत पूर्णता",
+    shareTitle: "मेरी वजन बढ़ाने की प्रगति",
+    copyLink: "रिपोर्ट कॉपी करें",
+    copied: "कॉपी हो गया!",
+    resetDay: "आज रीसेट करें",
+    greeting: "शुभ",
+    morning: "प्रभात",
+    afternoon: "दोपहर",
+    evening: "संध्या",
+    night: "रात्रि",
+    rightNutrition: "सही पोषण",
+    consistency2: "नियमितता",
+    betterResults: "बेहतर परिणाम",
+    aiFeature1: "AI मील प्लानर",
+    aiFeature2: "प्रगति विश्लेषक",
+    aiFeature3: "प्रेरणा कोच",
+    generateMeal: "कस्टम मील बनाएं",
+    analyzeProgress: "मेरी प्रगति विश्लेषण करें",
+    getMotivation: "प्रेरणा पाएं",
+    noDataYet: "प्रगति देखने के लिए कार्य पूर्ण करें!",
+    weekdays: ["रवि", "सोम", "मंगल", "बुध", "गुरु", "शुक्र", "शनि"],
+    months: ["जन","फर","मार","अप्र","मई","जून","जुल","अग","सित","अक्त","नव","दिस"],
+  },
+};
+
+// ─── TASKS DATA ────────────────────────────────────────────────────────────────
+const TASKS_DATA = {
+  en: [
+    { id: "t1", time: "6:00 AM", emoji: "💧", title: "Morning Hydration", desc: "1 glass of water (normal or lukewarm)", tag: "hydration", color: "#4FC3F7" },
+    { id: "t2", time: "6:30 AM", emoji: "🎧", title: "Morning Club Join", desc: "Online or a community wellness session", tag: "wellness", color: "#81C784" },
+    { id: "t3", time: "7:00 AM", emoji: "🌿", title: "Afresh", desc: "1 scoop – Metabolism Booster", tag: "supplement", color: "#A5D6A7" },
+    { id: "t4", time: "8:00 AM", emoji: "🥤", title: "Breakfast", desc: "Formula-1 (3 scoops) + ShakeMate (2 scoops)", tag: "meal", color: "#FFCC80" },
+    { id: "t5", time: "10:00 AM", emoji: "🍌", title: "Mid-Morning Snack", desc: "2 Bananas or Chiku (or any seasonal fruit like mango)", tag: "snack", color: "#FFE082" },
+    { id: "t6", time: "12:00 PM", emoji: "🍽️", title: "Lunch", desc: "4 Roti + Sabzi + Salad + Curd", tag: "meal", color: "#EF9A9A" },
+    { id: "t7", time: "1:00 PM", emoji: "🌿", title: "Afresh", desc: "1 scoop (Helps boost metabolism)", tag: "supplement", color: "#A5D6A7" },
+    { id: "t8", time: "4:00 PM", emoji: "☕", title: "Evening Snack", desc: "Tea + Healthy Snacks", tag: "snack", color: "#BCAAA4" },
+    { id: "t9", time: "5:00 PM", emoji: "🌱", title: "Evening Nutrition", desc: "Sprouts (Moong, Chana, and soaked dry fruits)", tag: "meal", color: "#80CBC4" },
+    { id: "t10", time: "8:00 PM", emoji: "🫓", title: "Dinner", desc: "3 Roti + Sabzi", tag: "meal", color: "#CE93D8" },
+    { id: "t11", time: "10:00 PM", emoji: "🌙", title: "Rest", desc: "Time to sleep – Good Sleep Better Growth", tag: "rest", color: "#9FA8DA" },
+  ],
+  hi: [
+    { id: "t1", time: "6:00 सुबह", emoji: "💧", title: "सुबह हाइड्रेशन", desc: "1 गिलास पानी पिएं (सामान्य या हल्का गरम)", tag: "hydration", color: "#4FC3F7" },
+    { id: "t2", time: "6:30 सुबह", emoji: "🎧", title: "मॉर्निंग क्लब जॉइन करें", desc: "ऑनलाइन या किसी समुदाय के साथ वेलनेस सेशन करें", tag: "wellness", color: "#81C784" },
+    { id: "t3", time: "7:00 सुबह", emoji: "🌿", title: "अफ्रेश", desc: "1 स्कूप – मेटाबॉलिज्म बढ़ाने में मददगार", tag: "supplement", color: "#A5D6A7" },
+    { id: "t4", time: "8:00 सुबह", emoji: "🥤", title: "नाश्ता", desc: "फॉर्मूला-1 (3 स्कूप) + शेकमेट (2 स्कूप)", tag: "meal", color: "#FFCC80" },
+    { id: "t5", time: "10:00 सुबह", emoji: "🍌", title: "मिड-मॉर्निंग स्नैक", desc: "2 केले या चीकू (या कोई मौसमी फल जैसे आम)", tag: "snack", color: "#FFE082" },
+    { id: "t6", time: "12:00 दोपहर", emoji: "🍽️", title: "दोपहर का भोजन", desc: "4 रोटी + सब्जी + सलाद + दही", tag: "meal", color: "#EF9A9A" },
+    { id: "t7", time: "1:00 दोपहर", emoji: "🌿", title: "अफ्रेश", desc: "1 स्कूप (मेटाबॉलिज्म बढ़ाने में मददगार)", tag: "supplement", color: "#A5D6A7" },
+    { id: "t8", time: "4:00 शाम", emoji: "☕", title: "शाम का स्नैक", desc: "चाय + हेल्दी स्नैक्स", tag: "snack", color: "#BCAAA4" },
+    { id: "t9", time: "5:00 शाम", emoji: "🌱", title: "शाम का पोषण", desc: "स्प्राउट्स (मूंग, चना) और भिगोए सूखे मेवे", tag: "meal", color: "#80CBC4" },
+    { id: "t10", time: "8:00 रात", emoji: "🫓", title: "रात का भोजन", desc: "3 रोटी + सब्जी", tag: "meal", color: "#CE93D8" },
+    { id: "t11", time: "10:00 रात", emoji: "🌙", title: "आराम", desc: "अच्छी नींद लें – अच्छी नींद, बेहतर विकास", tag: "rest", color: "#9FA8DA" },
+  ],
+};
+
+// ─── STORAGE HELPERS ───────────────────────────────────────────────────────────
+const STORAGE_KEY = "wgdp_data_v2";
+function loadData() {
+  try {
+    const raw = localStorage.getItem(STORAGE_KEY);
+    return raw ? JSON.parse(raw) : { completions: {}, lang: "en", streak: 0, lastDate: null };
+  } catch { return { completions: {}, lang: "en", streak: 0, lastDate: null }; }
+}
+function saveData(d) {
+  try { localStorage.setItem(STORAGE_KEY, JSON.stringify(d)); } catch {}
+}
+
+// ─── DATE HELPERS ──────────────────────────────────────────────────────────────
+function getDateKey(date) {
+  return `${date.getFullYear()}-${String(date.getMonth()+1).padStart(2,'0')}-${String(date.getDate()).padStart(2,'0')}`;
+}
+
+// ─── MAIN APP ──────────────────────────────────────────────────────────────────
+export default function App() {
+  const [store, setStore] = useState(loadData);
+  const [tab, setTab] = useState("today");
+  const [now, setNow] = useState(new Date());
+  const [aiMessages, setAiMessages] = useState([]);
+  const [aiInput, setAiInput] = useState("");
+  const [aiLoading, setAiLoading] = useState(false);
+  const [aiMode, setAiMode] = useState("chat"); // chat | meal | analyze | motivate
+  const [shareToast, setShareToast] = useState(false);
+  const [confetti, setConfetti] = useState([]);
+  const [celebTask, setCelebTask] = useState(null);
+
+  const lang = store.lang || "en";
+  const t = T[lang];
+  const tasks = TASKS_DATA[lang];
+  const todayKey = getDateKey(now);
+
+  // Clock tick
+  useEffect(() => {
+    const interval = setInterval(() => setNow(new Date()), 60000);
+    return () => clearInterval(interval);
+  }, []);
+
+  // Persist
+  useEffect(() => { saveData(store); }, [store]);
+
+  // Streak calc
+  useEffect(() => {
+    const yesterday = new Date(now);
+    yesterday.setDate(yesterday.getDate() - 1);
+    const yk = getDateKey(yesterday);
+    if (store.lastDate && store.lastDate !== todayKey) {
+      const completions = store.completions[yk] || {};
+      const rate = Object.values(completions).filter(Boolean).length / tasks.length;
+      if (rate >= 0.7) {
+        if (store.lastDate === yk) {
+          setStore(s => ({...s, streak: (s.streak||0)+1, lastDate: todayKey}));
+        }
+      } else if (store.lastDate !== yk) {
+        setStore(s => ({...s, streak: 0, lastDate: todayKey}));
+      }
+    }
+  }, [todayKey]);
+
+  const todayCompletions = store.completions[todayKey] || {};
+  const completedCount = Object.values(todayCompletions).filter(Boolean).length;
+  const totalTasks = tasks.length;
+  const pct = Math.round((completedCount / totalTasks) * 100);
+
+  function toggleTask(id) {
+    const newVal = !todayCompletions[id];
+    const newCompletions = { ...store.completions, [todayKey]: { ...todayCompletions, [id]: newVal } };
+    setStore(s => ({...s, completions: newCompletions, lastDate: todayKey}));
+    if (newVal) {
+      setCelebTask(id);
+      launchConfetti();
+      setTimeout(() => setCelebTask(null), 1000);
+    }
+  }
+
+  function launchConfetti() {
+    const pieces = Array.from({length: 18}, (_, i) => ({
+      id: i, x: Math.random()*100, color: ["#FFD700","#FF6B6B","#4FC3F7","#81C784","#CE93D8"][i%5],
+      size: Math.random()*8+4, delay: Math.random()*0.5
+    }));
+    setConfetti(pieces);
+    setTimeout(() => setConfetti([]), 2000);
+  }
+
+  function resetToday() {
+    setStore(s => ({...s, completions: {...s.completions, [todayKey]: {}}}));
+  }
+
+  // Weekly data
+  function getWeekData() {
+    const result = [];
+    for (let i = 6; i >= 0; i--) {
+      const d = new Date(now);
+      d.setDate(d.getDate() - i);
+      const key = getDateKey(d);
+      const comp = store.completions[key] || {};
+      const done = Object.values(comp).filter(Boolean).length;
+      result.push({ day: t.weekdays[d.getDay()], pct: Math.round((done/totalTasks)*100), done, date: key });
+    }
+    return result;
+  }
+
+  // Monthly data
+  function getMonthData() {
+    const result = [];
+    const daysInMonth = new Date(now.getFullYear(), now.getMonth()+1, 0).getDate();
+    let totalPct = 0, counted = 0;
+    for (let i = 1; i <= daysInMonth; i++) {
+      const d = new Date(now.getFullYear(), now.getMonth(), i);
+      const key = getDateKey(d);
+      const comp = store.completions[key] || {};
+      const done = Object.values(comp).filter(Boolean).length;
+      const p = Math.round((done/totalTasks)*100);
+      if (d <= now) { totalPct += p; counted++; }
+      result.push({ day: i, pct: p, isPast: d <= now });
+    }
+    return { days: result, avg: counted ? Math.round(totalPct/counted) : 0 };
+  }
+
+  // Greeting
+  const hour = now.getHours();
+  const greetPart = hour < 12 ? t.morning : hour < 17 ? t.afternoon : hour < 21 ? t.evening : t.night;
+
+  // AI Chat
+  async function sendAI(customPrompt) {
+    const prompt = customPrompt || aiInput.trim();
+    if (!prompt && !customPrompt) return;
+    const userMsg = { role: "user", content: prompt };
+    const newMsgs = [...aiMessages, userMsg];
+    setAiMessages(newMsgs);
+    setAiInput("");
+    setAiLoading(true);
+    const weekData = getWeekData();
+    const todayDone = completedCount;
+    const systemPrompt = `You are a friendly, knowledgeable health and nutrition AI coach specialized in HEALTHY WEIGHT GAIN. The user is following a structured diet plan with these daily tasks: ${tasks.map(t=>t.title).join(", ")}. Today they've completed ${todayDone}/${totalTasks} tasks (${pct}%). Weekly avg: ${weekData.map(d=>d.pct+'%').join(', ')}. Language preference: ${lang === 'hi' ? 'Hindi' : 'English'}. Respond in ${lang === 'hi' ? 'Hindi' : 'English'}. Be encouraging, specific, and practical. Keep responses concise (under 150 words).`;
+    try {
+      const response = await fetch("https://api.anthropic.com/v1/messages", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          model: "claude-sonnet-4-20250514",
+          max_tokens: 1000,
+          system: systemPrompt,
+          messages: newMsgs,
+        }),
+      });
+      const data = await response.json();
+      const reply = data.content?.map(c => c.text || "").join("") || "Sorry, I couldn't respond right now.";
+      setAiMessages([...newMsgs, { role: "assistant", content: reply }]);
+    } catch {
+      setAiMessages([...newMsgs, { role: "assistant", content: lang === "hi" ? "क्षमा करें, अभी जवाब नहीं दे सकते।" : "Sorry, couldn't connect right now." }]);
+    }
+    setAiLoading(false);
+  }
+
+  async function triggerAIFeature(mode) {
+    setTab("ai");
+    setAiMode(mode);
+    let prompt;
+    const weekData = getWeekData();
+    if (mode === "meal") {
+      prompt = lang === "hi"
+        ? `मेरी आज की ${completedCount}/${totalTasks} कार्य पूर्ण हुए हैं। मुझे एक कस्टम मील प्लान सुझाएं जो मेरे वजन बढ़ाने के लक्ष्य में मदद करे। विशेष रूप से कल के लिए कुछ नए विकल्प बताएं।`
+        : `I've completed ${completedCount}/${totalTasks} tasks today. Suggest a custom meal variation for tomorrow that supports healthy weight gain, keeping the plan but adding variety.`;
+    } else if (mode === "analyze") {
+      prompt = lang === "hi"
+        ? `मेरी साप्ताहिक प्रगति: ${weekData.map(d=>d.day+': '+d.pct+'%').join(', ')}। मेरी प्रगति का विस्तृत विश्लेषण करें और सुधार के सुझाव दें।`
+        : `My weekly progress: ${weekData.map(d=>d.day+': '+d.pct+'%').join(', ')}. Analyze my progress patterns and give specific actionable advice to improve consistency.`;
+    } else if (mode === "motivate") {
+      const streak = store.streak || 0;
+      prompt = lang === "hi"
+        ? `मेरी ${streak} दिन की स्ट्रीक है और आज ${pct}% कार्य पूर्ण किए। मुझे वजन बढ़ाने के सफर में आगे बढ़ने के लिए प्रेरित करें।`
+        : `I have a ${streak}-day streak and completed ${pct}% today. Give me powerful, personalized motivation to keep going on my weight gain journey.`;
+    }
+    if (prompt) sendAI(prompt);
+  }
+
+  // Share
+  function shareProgress() {
+    const weekData = getWeekData();
+    const text = lang === "hi"
+      ? `🏋️ मेरी वजन बढ़ाने की प्रगति\n\nआज: ${pct}% (${completedCount}/${totalTasks} कार्य)\n🔥 स्ट्रीक: ${store.streak||0} दिन\n\nसाप्ताहिक रिपोर्ट:\n${weekData.map(d=>`${d.day}: ${d.pct}%`).join('\n')}\n\n#वजनबढ़ाओ #हेल्दीलाइफ`
+      : `🏋️ My Weight Gain Progress\n\nToday: ${pct}% (${completedCount}/${totalTasks} tasks)\n🔥 Streak: ${store.streak||0} days\n\nWeekly Report:\n${weekData.map(d=>`${d.day}: ${d.pct}%`).join('\n')}\n\n#WeightGain #HealthyLife`;
+    
+    if (navigator.share) {
+      navigator.share({ title: t.shareTitle, text });
+    } else {
+      navigator.clipboard.writeText(text).then(() => {
+        setShareToast(true);
+        setTimeout(() => setShareToast(false), 2500);
+      });
+    }
+  }
+
+  const weekData = getWeekData();
+  const monthData = getMonthData();
+
+  return (
+    <div style={styles.root}>
+      {/* Confetti */}
+      {confetti.map(c => (
+        <div key={c.id} style={{
+          position:"fixed", top: "-10px", left: `${c.x}%`,
+          width: c.size, height: c.size, borderRadius: "50%",
+          background: c.color, zIndex: 9999,
+          animation: `confettiFall 1.8s ease-in forwards`,
+          animationDelay: `${c.delay}s`, pointerEvents: "none"
+        }}/>
+      ))}
+
+      {/* Header */}
+      <div style={styles.header}>
+        <div style={styles.headerBg}/>
+        <div style={styles.headerContent}>
+          <div style={styles.headerTop}>
+            <div>
+              <div style={styles.greeting}>{t.greeting} {greetPart}! 🌟</div>
+              <div style={styles.appTitle}>{t.appTitle}</div>
+            </div>
+            <button onClick={() => setStore(s=>({...s, lang: lang==="en"?"hi":"en"}))} style={styles.langBtn}>
+              {t.switchLang}
+            </button>
+          </div>
+
+          {/* Progress Ring */}
+          <div style={styles.progressRow}>
+            <div style={styles.ringWrap}>
+              <svg width="88" height="88" viewBox="0 0 88 88">
+                <circle cx="44" cy="44" r="36" fill="none" stroke="rgba(255,255,255,0.2)" strokeWidth="8"/>
+                <circle cx="44" cy="44" r="36" fill="none" stroke="#FFD700" strokeWidth="8"
+                  strokeDasharray={`${(pct/100)*226.2} 226.2`}
+                  strokeLinecap="round" transform="rotate(-90 44 44)"
+                  style={{transition:"stroke-dasharray 0.6s ease"}}/>
+                <text x="44" y="49" textAnchor="middle" fill="white" fontSize="18" fontWeight="bold">{pct}%</text>
+              </svg>
+            </div>
+            <div style={styles.statsCol}>
+              <div style={styles.statItem}>
+                <span style={styles.statNum}>{completedCount}/{totalTasks}</span>
+                <span style={styles.statLbl}>{t.completedTasks}</span>
+              </div>
+              <div style={styles.statItem}>
+                <span style={styles.statNum}>🔥 {store.streak||0}</span>
+                <span style={styles.statLbl}>{t.streakDays}</span>
+              </div>
+              <div style={styles.statItem}>
+                <span style={styles.statNum}>{weekData.length ? Math.round(weekData.reduce((a,d)=>a+d.pct,0)/weekData.length) : 0}%</span>
+                <span style={styles.statLbl}>{t.avgCompletion}</span>
+              </div>
+            </div>
+          </div>
+
+          {/* Time */}
+          <div style={styles.timeDisplay}>
+            {now.toLocaleTimeString(lang==="hi"?"hi-IN":"en-US", {hour:"2-digit", minute:"2-digit"})} · {now.toLocaleDateString(lang==="hi"?"hi-IN":"en-US", {weekday:"long", month:"short", day:"numeric"})}
+          </div>
+        </div>
+      </div>
+
+      {/* Tabs */}
+      <div style={styles.tabBar}>
+        {[["today","📋",t.today],["weekly","📊",t.weekly],["monthly","📅",t.monthly],["ai","🤖",t.aiCoach]].map(([key,icon,label])=>(
+          <button key={key} onClick={()=>setTab(key)} style={{...styles.tabBtn, ...(tab===key?styles.tabActive:{})}}>
+            <span style={{fontSize:16}}>{icon}</span>
+            <span style={styles.tabLabel}>{label}</span>
+          </button>
+        ))}
+      </div>
+
+      {/* Content */}
+      <div style={styles.content}>
+
+        {/* TODAY TAB */}
+        {tab === "today" && (
+          <div>
+            <div style={styles.sectionHeader}>
+              <span>{t.todayProgress}</span>
+              <button onClick={resetToday} style={styles.resetBtn}>{t.resetDay}</button>
+            </div>
+
+            {tasks.map((task, idx) => {
+              const done = !!todayCompletions[task.id];
+              const isCurrent = celebTask === task.id;
+              return (
+                <div key={task.id} onClick={()=>toggleTask(task.id)}
+                  style={{...styles.taskCard, ...(done?styles.taskDone:{}), ...(isCurrent?styles.taskCelebrate:{})}}
+                >
+                  <div style={{...styles.taskAccent, background: task.color}}/>
+                  <div style={styles.taskTime}>{task.time}</div>
+                  <div style={styles.taskEmoji}>{task.emoji}</div>
+                  <div style={styles.taskInfo}>
+                    <div style={styles.taskTitle}>{task.title}</div>
+                    <div style={styles.taskDesc}>{task.desc}</div>
+                    <div style={{...styles.taskTag, background: task.color+'33', color: task.color}}>
+                      {task.tag}
+                    </div>
+                  </div>
+                  <div style={{...styles.taskCheck, ...(done?styles.taskCheckDone:{})}}>
+                    {done ? "✓" : ""}
+                  </div>
+                </div>
+              );
+            })}
+
+            {/* Habits */}
+            <div style={styles.habitsCard}>
+              <div style={styles.habitsTitle}>💧 {t.dailyHabits}</div>
+              <p style={styles.habitsText}>{t.hydration}</p>
+              <p style={styles.habitsText}>{t.consistency}</p>
+            </div>
+            <div style={styles.avoidCard}>
+              <div style={styles.avoidTitle}>🚫 {t.foodsToAvoid}</div>
+              {[t.avoid1,t.avoid2,t.avoid3,t.avoid4].map((a,i)=>(
+                <div key={i} style={styles.avoidItem}>⊗ {a}</div>
+              ))}
+            </div>
+
+            <div style={styles.footer}>
+              <span>{t.rightNutrition}</span><span> • </span>
+              <span>{t.consistency2}</span><span> • </span>
+              <span>{t.betterResults}</span>
+            </div>
+          </div>
+        )}
+
+        {/* WEEKLY TAB */}
+        {tab === "weekly" && (
+          <div>
+            <div style={styles.sectionHeader}><span>{t.weeklyReport}</span></div>
+            <div style={styles.reportCard}>
+              {weekData.map((d,i) => (
+                <div key={i} style={styles.barRow}>
+                  <div style={styles.barDay}>{d.day}</div>
+                  <div style={styles.barTrack}>
+                    <div style={{...styles.barFill, width:`${d.pct}%`, background: d.pct>=80?"#81C784":d.pct>=50?"#FFD700":"#EF9A9A"}}/>
+                  </div>
+                  <div style={styles.barPct}>{d.pct}%</div>
+                </div>
+              ))}
+            </div>
+            <div style={styles.summaryCard}>
+              <div style={styles.summaryItem}>
+                <span style={styles.summaryNum}>{weekData.filter(d=>d.pct>=80).length}</span>
+                <span style={styles.summaryLbl}>🟢 {lang==="hi"?"अच्छे दिन":"Great Days"}</span>
+              </div>
+              <div style={styles.summaryItem}>
+                <span style={styles.summaryNum}>{Math.round(weekData.reduce((a,d)=>a+d.pct,0)/7)}%</span>
+                <span style={styles.summaryLbl}>📊 {lang==="hi"?"औसत":"Average"}</span>
+              </div>
+              <div style={styles.summaryItem}>
+                <span style={styles.summaryNum}>{Math.max(...weekData.map(d=>d.pct))}%</span>
+                <span style={styles.summaryLbl}>🏆 {lang==="hi"?"सर्वश्रेष्ठ":"Best Day"}</span>
+              </div>
+            </div>
+            <button onClick={shareProgress} style={styles.shareBtn}>
+              📤 {t.shareProgress}
+            </button>
+          </div>
+        )}
+
+        {/* MONTHLY TAB */}
+        {tab === "monthly" && (
+          <div>
+            <div style={styles.sectionHeader}>
+              <span>{t.monthlyReport}</span>
+              <span style={styles.monthAvg}>{t.months[now.getMonth()]} · {monthData.avg}% {lang==="hi"?"औसत":"avg"}</span>
+            </div>
+            <div style={styles.calGrid}>
+              {t.weekdays.map(d => <div key={d} style={styles.calHead}>{d}</div>)}
+              {Array.from({length: new Date(now.getFullYear(), now.getMonth(), 1).getDay()}).map((_,i)=>
+                <div key={`e${i}`}/>
+              )}
+              {monthData.days.map(d => (
+                <div key={d.day} style={{
+                  ...styles.calCell,
+                  background: !d.isPast ? "#f5f5f5" : d.pct>=80?"#C8E6C9":d.pct>=50?"#FFF9C4":d.pct>0?"#FFCDD2":"#EEEEEE",
+                  border: d.day === now.getDate() ? "2px solid #2E7D32" : "1px solid #eee",
+                  color: d.isPast ? "#333" : "#bbb"
+                }}>
+                  <div style={styles.calDay}>{d.day}</div>
+                  {d.isPast && d.pct > 0 && <div style={styles.calPct}>{d.pct}%</div>}
+                </div>
+              ))}
+            </div>
+            <div style={styles.calLegend}>
+              {[["#C8E6C9","≥80%"],["#FFF9C4","50–79%"],["#FFCDD2","<50%"]].map(([c,l])=>(
+                <div key={l} style={styles.legendItem}><div style={{...styles.legendDot,background:c}}/>{l}</div>
+              ))}
+            </div>
+            <button onClick={shareProgress} style={styles.shareBtn}>
+              📤 {t.shareProgress}
+            </button>
+          </div>
+        )}
+
+        {/* AI TAB */}
+        {tab === "ai" && (
+          <div>
+            <div style={styles.sectionHeader}><span>🤖 {t.aiCoach}</span></div>
+
+            {/* AI Feature Buttons */}
+            <div style={styles.aiFeatures}>
+              <button onClick={()=>triggerAIFeature("meal")} style={styles.aiFeatureBtn}>
+                <span style={styles.aiFIcon}>🥗</span>
+                <span>{t.aiFeature1}</span>
+              </button>
+              <button onClick={()=>triggerAIFeature("analyze")} style={styles.aiFeatureBtn}>
+                <span style={styles.aiFIcon}>📊</span>
+                <span>{t.aiFeature2}</span>
+              </button>
+              <button onClick={()=>triggerAIFeature("motivate")} style={styles.aiFeatureBtn}>
+                <span style={styles.aiFIcon}>💪</span>
+                <span>{t.aiFeature3}</span>
+              </button>
+            </div>
+
+            {/* Chat */}
+            <div style={styles.chatBox}>
+              {aiMessages.length === 0 && (
+                <div style={styles.chatEmpty}>
+                  <div style={{fontSize:40}}>🤖</div>
+                  <div style={{color:"#666", marginTop:8, fontSize:14, textAlign:"center"}}>
+                    {lang==="hi" ? "नमस्ते! मैं आपका AI हेल्थ कोच हूं। ऊपर दिए बटन दबाएं या सीधे सवाल पूछें।" : "Hi! I'm your AI health coach. Tap a feature above or ask me anything!"}
+                  </div>
+                </div>
+              )}
+              {aiMessages.map((m,i) => (
+                <div key={i} style={{...styles.chatMsg, ...(m.role==="user"?styles.chatUser:styles.chatAssistant)}}>
+                  {m.role==="assistant" && <div style={styles.chatIcon}>🤖</div>}
+                  <div style={{...styles.chatBubble, ...(m.role==="user"?styles.chatBubbleUser:styles.chatBubbleAI)}}>
+                    {m.content}
+                  </div>
+                </div>
+              ))}
+              {aiLoading && (
+                <div style={styles.chatMsg}>
+                  <div style={styles.chatIcon}>🤖</div>
+                  <div style={styles.chatBubbleAI}><span style={styles.dots}>●●●</span></div>
+                </div>
+              )}
+            </div>
+
+            <div style={styles.chatInputRow}>
+              <input
+                value={aiInput}
+                onChange={e=>setAiInput(e.target.value)}
+                onKeyDown={e=>e.key==="Enter"&&sendAI()}
+                placeholder={t.askAI}
+                style={styles.chatInput}
+              />
+              <button onClick={()=>sendAI()} style={styles.chatSend} disabled={aiLoading}>
+                {t.aiSend}
+              </button>
+            </div>
+          </div>
+        )}
+      </div>
+
+      {/* Share Toast */}
+      {shareToast && (
+        <div style={styles.toast}>✅ {t.copied}</div>
+      )}
+
+      <style>{`
+        @keyframes confettiFall {
+          0% { transform: translateY(0) rotate(0deg); opacity: 1; }
+          100% { transform: translateY(100vh) rotate(720deg); opacity: 0; }
+        }
+        @keyframes dots { 0%,80%,100%{opacity:0} 40%{opacity:1} }
+        .dots span { animation: dots 1.4s infinite; }
+        * { box-sizing: border-box; -webkit-tap-highlight-color: transparent; }
+        body { margin: 0; font-family: 'Segoe UI', sans-serif; background: #f0f4f0; }
+        ::-webkit-scrollbar { width: 0; }
+      `}</style>
+    </div>
+  );
+}
+
+// ─── STYLES ────────────────────────────────────────────────────────────────────
+const styles = {
+  root: { maxWidth: 480, margin: "0 auto", minHeight: "100vh", background: "#f0f4f0", position: "relative", overflowX: "hidden" },
+  header: { background: "linear-gradient(135deg, #1B5E20 0%, #2E7D32 50%, #388E3C 100%)", position: "relative", overflow: "hidden" },
+  headerBg: { position: "absolute", inset: 0, background: "url(\"data:image/svg+xml,%3Csvg width='60' height='60' viewBox='0 0 60 60' xmlns='http://www.w3.org/2000/svg'%3E%3Cg fill='none' fill-rule='evenodd'%3E%3Cg fill='%23ffffff' fill-opacity='0.05'%3E%3Cpath d='M36 34v-4h-2v4h-4v2h4v4h2v-4h4v-2h-4zm0-30V0h-2v4h-4v2h4v4h2V6h4V4h-4zM6 34v-4H4v4H0v2h4v4h2v-4h4v-2H6zM6 4V0H4v4H0v2h4v4h2V6h4V4H6z'/%3E%3C/g%3E%3C/g%3E%3C/svg%3E\")" },
+  headerContent: { position: "relative", padding: "20px 20px 16px" },
+  headerTop: { display: "flex", justifyContent: "space-between", alignItems: "flex-start", marginBottom: 16 },
+  greeting: { color: "rgba(255,255,255,0.8)", fontSize: 13 },
+  appTitle: { color: "white", fontSize: 20, fontWeight: 800, lineHeight: 1.2 },
+  langBtn: { background: "rgba(255,255,255,0.2)", border: "1px solid rgba(255,255,255,0.4)", color: "white", padding: "6px 12px", borderRadius: 20, fontSize: 13, cursor: "pointer" },
+  progressRow: { display: "flex", alignItems: "center", gap: 16, marginBottom: 12 },
+  ringWrap: {},
+  statsCol: { flex: 1, display: "flex", flexDirection: "column", gap: 6 },
+  statItem: { display: "flex", alignItems: "center", gap: 8 },
+  statNum: { color: "white", fontWeight: 700, fontSize: 16 },
+  statLbl: { color: "rgba(255,255,255,0.7)", fontSize: 12 },
+  timeDisplay: { color: "rgba(255,255,255,0.85)", fontSize: 13, textAlign: "center", paddingTop: 4, borderTop: "1px solid rgba(255,255,255,0.15)" },
+  tabBar: { display: "flex", background: "white", borderBottom: "2px solid #e8f5e9", position: "sticky", top: 0, zIndex: 100, boxShadow: "0 2px 8px rgba(0,0,0,0.06)" },
+  tabBtn: { flex: 1, padding: "10px 4px", border: "none", background: "none", cursor: "pointer", display: "flex", flexDirection: "column", alignItems: "center", gap: 2, color: "#888", borderBottom: "3px solid transparent", transition: "all 0.2s" },
+  tabActive: { color: "#2E7D32", borderBottomColor: "#2E7D32", background: "#f1f8e9" },
+  tabLabel: { fontSize: 10, fontWeight: 600 },
+  content: { padding: "12px 14px 80px" },
+  sectionHeader: { display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: 12, fontWeight: 700, color: "#1B5E20", fontSize: 16 },
+  resetBtn: { fontSize: 11, color: "#EF5350", background: "#FFEBEE", border: "none", padding: "4px 10px", borderRadius: 12, cursor: "pointer" },
+  taskCard: { display: "flex", alignItems: "center", background: "white", borderRadius: 14, marginBottom: 10, padding: "12px 14px", boxShadow: "0 2px 8px rgba(0,0,0,0.06)", cursor: "pointer", transition: "all 0.2s", position: "relative", overflow: "hidden", border: "1px solid #f0f0f0" },
+  taskDone: { background: "#F1F8E9", border: "1px solid #C8E6C9" },
+  taskCelebrate: { transform: "scale(1.02)", boxShadow: "0 4px 20px rgba(46,125,50,0.3)" },
+  taskAccent: { position: "absolute", left: 0, top: 0, bottom: 0, width: 4, borderRadius: "14px 0 0 14px" },
+  taskTime: { fontSize: 10, color: "#888", minWidth: 56, marginRight: 6, marginLeft: 8 },
+  taskEmoji: { fontSize: 24, marginRight: 10 },
+  taskInfo: { flex: 1 },
+  taskTitle: { fontWeight: 700, fontSize: 14, color: "#222" },
+  taskDesc: { fontSize: 12, color: "#666", marginTop: 2 },
+  taskTag: { display: "inline-block", fontSize: 10, padding: "2px 8px", borderRadius: 10, marginTop: 4, fontWeight: 600 },
+  taskCheck: { width: 26, height: 26, borderRadius: "50%", border: "2px solid #ddd", display: "flex", alignItems: "center", justifyContent: "center", fontSize: 14, color: "white", background: "#eee", transition: "all 0.2s", flexShrink: 0 },
+  taskCheckDone: { background: "#2E7D32", border: "2px solid #2E7D32" },
+  habitsCard: { background: "linear-gradient(135deg, #E3F2FD, #E8F5E9)", borderRadius: 14, padding: 16, marginTop: 12, border: "1px solid #BBDEFB" },
+  habitsTitle: { fontWeight: 700, color: "#1565C0", marginBottom: 8 },
+  habitsText: { fontSize: 13, color: "#444", margin: "4px 0" },
+  avoidCard: { background: "#FFF3E0", borderRadius: 14, padding: 16, marginTop: 10, border: "1px solid #FFCC80" },
+  avoidTitle: { fontWeight: 700, color: "#E65100", marginBottom: 8 },
+  avoidItem: { fontSize: 13, color: "#555", margin: "4px 0" },
+  footer: { textAlign: "center", color: "#2E7D32", fontWeight: 700, fontSize: 12, padding: "16px 0", letterSpacing: 1 },
+  reportCard: { background: "white", borderRadius: 14, padding: 16, boxShadow: "0 2px 8px rgba(0,0,0,0.06)" },
+  barRow: { display: "flex", alignItems: "center", gap: 10, marginBottom: 12 },
+  barDay: { width: 36, fontSize: 12, color: "#555", fontWeight: 600 },
+  barTrack: { flex: 1, height: 16, background: "#f0f0f0", borderRadius: 8, overflow: "hidden" },
+  barFill: { height: "100%", borderRadius: 8, transition: "width 0.6s ease" },
+  barPct: { width: 36, fontSize: 12, color: "#333", fontWeight: 700, textAlign: "right" },
+  summaryCard: { display: "flex", background: "white", borderRadius: 14, padding: 16, marginTop: 12, boxShadow: "0 2px 8px rgba(0,0,0,0.06)", justifyContent: "space-around" },
+  summaryItem: { display: "flex", flexDirection: "column", alignItems: "center", gap: 4 },
+  summaryNum: { fontSize: 22, fontWeight: 800, color: "#2E7D32" },
+  summaryLbl: { fontSize: 11, color: "#666", textAlign: "center" },
+  shareBtn: { width: "100%", marginTop: 14, background: "linear-gradient(135deg, #2E7D32, #66BB6A)", color: "white", border: "none", borderRadius: 14, padding: "14px", fontSize: 15, fontWeight: 700, cursor: "pointer", boxShadow: "0 4px 12px rgba(46,125,50,0.3)" },
+  calGrid: { display: "grid", gridTemplateColumns: "repeat(7, 1fr)", gap: 4, background: "white", borderRadius: 14, padding: 12, boxShadow: "0 2px 8px rgba(0,0,0,0.06)" },
+  calHead: { textAlign: "center", fontSize: 10, fontWeight: 700, color: "#2E7D32", padding: "4px 0" },
+  calCell: { borderRadius: 8, padding: 4, minHeight: 40, display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center", cursor: "default" },
+  calDay: { fontSize: 12, fontWeight: 600 },
+  calPct: { fontSize: 9, fontWeight: 700, color: "#444" },
+  calLegend: { display: "flex", gap: 12, justifyContent: "center", marginTop: 10 },
+  legendItem: { display: "flex", alignItems: "center", gap: 4, fontSize: 11, color: "#555" },
+  legendDot: { width: 14, height: 14, borderRadius: 4 },
+  monthAvg: { fontSize: 12, color: "#2E7D32", fontWeight: 600 },
+  aiFeatures: { display: "flex", gap: 8, marginBottom: 14 },
+  aiFeatureBtn: { flex: 1, background: "white", border: "2px solid #E8F5E9", borderRadius: 12, padding: "10px 6px", cursor: "pointer", display: "flex", flexDirection: "column", alignItems: "center", gap: 4, fontSize: 11, fontWeight: 600, color: "#2E7D32", boxShadow: "0 2px 6px rgba(0,0,0,0.06)", transition: "all 0.2s" },
+  aiFIcon: { fontSize: 22 },
+  chatBox: { background: "white", borderRadius: 14, padding: 12, minHeight: 220, maxHeight: 380, overflowY: "auto", boxShadow: "0 2px 8px rgba(0,0,0,0.06)", marginBottom: 10 },
+  chatEmpty: { display: "flex", flexDirection: "column", alignItems: "center", justifyContent: "center", minHeight: 180 },
+  chatMsg: { display: "flex", gap: 8, marginBottom: 10 },
+  chatUser: { flexDirection: "row-reverse" },
+  chatAssistant: { flexDirection: "row" },
+  chatIcon: { fontSize: 20, flexShrink: 0 },
+  chatBubble: { maxWidth: "78%", padding: "10px 14px", borderRadius: 14, fontSize: 13, lineHeight: 1.5 },
+  chatBubbleUser: { background: "#2E7D32", color: "white", borderRadius: "14px 14px 4px 14px" },
+  chatBubbleAI: { background: "#F1F8E9", color: "#222", borderRadius: "14px 14px 14px 4px" },
+  chatInputRow: { display: "flex", gap: 8 },
+  chatInput: { flex: 1, border: "2px solid #E8F5E9", borderRadius: 12, padding: "10px 14px", fontSize: 14, outline: "none", background: "white" },
+  chatSend: { background: "#2E7D32", color: "white", border: "none", borderRadius: 12, padding: "10px 18px", fontSize: 14, fontWeight: 700, cursor: "pointer" },
+  dots: { letterSpacing: 4, animation: "dots 1.4s infinite" },
+  toast: { position: "fixed", bottom: 80, left: "50%", transform: "translateX(-50%)", background: "#2E7D32", color: "white", padding: "12px 24px", borderRadius: 24, fontWeight: 700, zIndex: 9999, boxShadow: "0 4px 16px rgba(0,0,0,0.2)", fontSize: 14 },
+};
